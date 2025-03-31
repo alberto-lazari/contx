@@ -1,0 +1,42 @@
+#!/bin/sh
+set -e
+
+error () {
+  echo "$(basename "$0"): $*" >&2
+  exit 1
+}
+
+start_context () {
+  [ -n "$1" ] || return 1
+
+  local shell_type="$1"
+  local initrc="shell/$shell_type.initrc"
+
+  case "$shell_type" in
+    bash) exec "$SHELL" --init-file "$initrc" ;;
+    *) error "'$shell_type' shell is not supported yet" ;;
+  esac
+}
+
+: "${CONTX_PRERC:=.contxenv:.contx/prerc}"
+export CONTX_PRERC
+
+# Source env file before session start to allow setting sensible envs
+IFS=:
+for file in $CONTX_PRERC; do
+  [ ! -f "$file" ] || . "$file"
+done
+
+: "${CONTX_INITRC:=.contxrc:.contx/initrc:.envrc:.env}"
+: "${CONTX_FILES:=$CONTX_PRERC:$CONTX_INITRC}"
+export CONTX_INITRC
+export CONTX_FILES
+
+for file in $CONTX_FILES; do
+  [ ! -f "$file" ] || local_files="${local_files+:}$(realpath $file)"
+done
+[ -n "$local_files" ] || error 'no context found in the current directory'
+unset IFS
+
+shell_type="$(basename "$(realpath "$SHELL")")"
+start_context "$shell_type"

@@ -1,0 +1,11 @@
+# Manually source standard bash config files
+[[ ! -f ~/.bash_profile ]] || . ~/.bash_profile
+[[ ! -f ~/.bashrc ]] || . ~/.bashrc
+
+# Source context init files after normal shell initialization
+IFS=:
+for file in $CONTX_INITRC; do
+  [[ ! -f "$file" ]] || . "$file"
+done
+unset file
+unset IFS
