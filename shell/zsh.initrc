@@ -1,0 +1,17 @@
+tmp="$ZDOTDIR"
+ZDOTDIR="$HOME"
+
+# .zshenv could set the proper ZDOTDIR
+[[ ! -f "$ZDOTDIR/.zshenv" ]] || . "$ZDOTDIR/.zshenv"
+[[ ! -f "$ZDOTDIR/.zprofile" ]] || . "$ZDOTDIR/.zprofile"
+[[ ! -f "$ZDOTDIR/.zshrc" ]] || . "$ZDOTDIR/.zshrc"
+
+# Source context init files after normal shell initialization
+for file in ${(s.:.)CONTX_INITRC}; do
+  [[ ! -f "$file" ]] || . "$file"
+done
+unset file
+
+# Remove temporary ZDOTDIR
+rm -rf "$tmp"
+unset tmp

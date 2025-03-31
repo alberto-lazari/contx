@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+
 error () {
   echo "$(basename "$0"): $*" >&2
   exit 1
@@ -10,25 +12,31 @@ start_context () {
   [ -n "$1" ] || return 1
 
   local shell_type="$1"
-  local initrc="shell/$shell_type.initrc"
+  local initrc="$SCRIPT_DIR/shell/$shell_type.initrc"
 
   case "$shell_type" in
     bash) exec "$SHELL" --init-file "$initrc" ;;
+    zsh)
+      # Move initrc to a temporary ZDOTDIR for zsh to source it
+      export ZDOTDIR="$(mktemp -d)"
+      cp "$initrc" "$ZDOTDIR/.zshrc"
+      exec "$SHELL"
+      ;;
     *) error "'$shell_type' shell is not supported yet" ;;
   esac
 }
 
-: "${CONTX_PRERC:=.contxenv:.contx/prerc}"
-export CONTX_PRERC
+: "${CONTX_ENVRC:=.contxenv:.contx/envrc}"
+export CONTX_ENVRC
 
 # Source env file before session start to allow setting sensible envs
 IFS=:
-for file in $CONTX_PRERC; do
+for file in $CONTX_ENVRC; do
   [ ! -f "$file" ] || . "$file"
 done
 
 : "${CONTX_INITRC:=.contxrc:.contx/initrc:.envrc:.env}"
-: "${CONTX_FILES:=$CONTX_PRERC:$CONTX_INITRC}"
+: "${CONTX_FILES:=$CONTX_ENVRC:$CONTX_INITRC}"
 export CONTX_INITRC
 export CONTX_FILES
 
