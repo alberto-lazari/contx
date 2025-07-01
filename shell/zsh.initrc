@@ -8,7 +8,7 @@ ZDOTDIR="$HOME"
 
 # Source context init files after normal shell initialization
 for file in ${(s.:.)CONTX_INITRC}; do
-  [[ ! -f "$file" ]] || . "$PWD/$file"
+  [[ ! -f "$CONTX_CONTEXT_DIR/$file" ]] || . "$CONTX_CONTEXT_DIR/$file"
 done
 unset file
 

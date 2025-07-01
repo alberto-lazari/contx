@@ -3,48 +3,97 @@ set -e
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
+: "${CONTX_CONFIG:=$HOME/.contxrc:$HOME/.contx/contxrc:${XDG_CONFIG_HOME:-$HOME/.config/contx}/contxrc}"
+: "${CONTX_PATH:=$HOME/.contx/contexts:${XDG_CONFIG_HOME:-$HOME/.config/contx/contexts}}"
+: "${CONTX_ENVRC:=../.contxenv:envrc:../.envrc:../.env}"
+: "${CONTX_INITRC:=../.contxrc:initrc}"
+export CONTX_CONFIG
+export CONTX_PATH
+export CONTX_ENVRC
+export CONTX_INITRC
+
 error () {
   echo "$(basename "$0"): $*" >&2
   exit 1
 }
 
-start_context () {
+has_contx_files () {
+  local directory file
   [ -n "$1" ] || return 1
+  directory="$1"
 
-  local shell_type="$1"
-  local initrc="$SCRIPT_DIR/shell/$shell_type.initrc"
+  IFS=:
+  for file in $CONTX_ENVRC:$CONTX_INITRC; do
+    [ ! -f "$directory/$file" ] || return 0
+  done
+  unset IFS
 
-  case "$shell_type" in
-    bash) exec "$SHELL" --init-file "$initrc" ;;
-    zsh)
-      # Move initrc to a temporary ZDOTDIR for zsh to source it
-      export ZDOTDIR="$(mktemp -d)"
-      cp "$initrc" "$ZDOTDIR/.zshrc"
-      exec "$SHELL"
-      ;;
-    *) error "'$shell_type' shell is not supported yet" ;;
-  esac
+  return 1
 }
 
-: "${CONTX_ENVRC:=.contxenv:.contx/envrc}"
-export CONTX_ENVRC
-
-# Source env file before session start to allow setting sensible envs
+# Source contx config file
 IFS=:
-for file in $CONTX_ENVRC; do
-  [ ! -f "$file" ] || . "$file"
+for rcfile in $CONTX_CONFIG; do
+  [ ! -f "$rcfile" ] || . "$rcfile"
 done
-
-: "${CONTX_INITRC:=.contxrc:.contx/initrc:.envrc:.env}"
-: "${CONTX_FILES:=$CONTX_ENVRC:$CONTX_INITRC}"
-export CONTX_INITRC
-export CONTX_FILES
-
-for file in $CONTX_FILES; do
-  [ ! -f "$file" ] || local_files="${local_files+:}$(realpath $file)"
-done
-[ -n "$local_files" ] || error 'no context found in the current directory'
 unset IFS
 
+# Set the argument as the context to run.
+# Search it between named context first, then as a relative directory
+if [ -n "$1" ]; then
+  context="$1"
+  IFS=:
+  for path in $CONTX_PATH; do
+    if [ -d "$path/$context" ] && has_contx_files "$path/$context"; then
+      CONTX_CONTEXT_DIR="$path/$context"
+      CONTX="$context"
+      break
+    fi
+  done
+  unset IFS
+
+  # If no named context was found, try interpreting the argument as a directory
+  [ -n "$CONTX_CONTEXT_DIR" ] ||
+  if [ -d "$context" ]; then
+    CONTX_CONTEXT_DIR="$(realpath "$context")/.contx"
+    cd "$context"
+  else
+    # No context was found, either as a named context or a directory
+    error "context '$context' is not defined"
+  fi
+fi
+
+# If no argument was passed search a context in the current directory
+: "${CONTX_CONTEXT_DIR:=$(realpath "$PWD")/.contx}"
+export CONTX_CONTEXT_DIR
+
+has_contx_files "$CONTX_CONTEXT_DIR" ||
+  error "no context found in '${CONTX_CONTEXT_DIR/$HOME/~}'"
+
+# Expose context name
+: ${CONTX:=$(basename "$(realpath "$CONTX_CONTEXT_DIR/..")")}
+export CONTX
+
+# Source env file before context session start to allow setting sensible envs
+IFS=:
+for file in $CONTX_ENVRC; do
+  [ ! -f "$CONTX_CONTEXT_DIR/$file" ] || . "$CONTX_CONTEXT_DIR/$file"
+done
+
+# Move to context directory, if specified in env file
+[ ! -d "$CONTX_DIR" ] || cd "$CONTX_DIR"
+
 shell_type="$(basename "$(realpath "$SHELL")")"
-start_context "$shell_type"
+initrc="$SCRIPT_DIR/shell/$shell_type.initrc"
+
+# Start context based on shell type
+case "$shell_type" in
+  bash) exec "$SHELL" --init-file "$initrc" ;;
+  zsh)
+    # Move initrc to a temporary ZDOTDIR for zsh to source it
+    export ZDOTDIR="$(mktemp -d)"
+    cp "$initrc" "$ZDOTDIR/.zshrc"
+    exec "$SHELL"
+    ;;
+  *) error "'$shell_type' shell is not supported yet" ;;
+esac

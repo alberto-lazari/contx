@@ -5,7 +5,7 @@
 # Source context init files after normal shell initialization
 IFS=:
 for file in $CONTX_INITRC; do
-  [[ ! -f "$file" ]] || . "$file"
+  [[ ! -f "$CONTX_CONTEXT_DIR/$file" ]] || . "$CONTX_CONTEXT_DIR/$file"
 done
 unset file
 unset IFS
