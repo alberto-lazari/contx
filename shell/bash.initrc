@@ -1,3 +1,5 @@
+. "$CONTX_LIB"
+
 # Manually source standard bash config files
 [[ ! -f ~/.bash_profile ]] || . ~/.bash_profile
 [[ ! -f ~/.bashrc ]] || . ~/.bashrc

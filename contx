@@ -2,34 +2,17 @@
 set -e
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+export CONTX_LIB="$SCRIPT_DIR/lib.sh"
+. "$CONTX_LIB"
 
 : "${CONTX_CONFIG:=$HOME/.contxrc:$HOME/.contx/contxrc:${XDG_CONFIG_HOME:-$HOME/.config/contx}/contxrc}"
 : "${CONTX_PATH:=$HOME/.contx/contexts:${XDG_CONFIG_HOME:-$HOME/.config/contx/contexts}}"
-: "${CONTX_ENVRC:=../.contxenv:envrc:../.envrc:../.env}"
-: "${CONTX_INITRC:=../.contxrc:initrc}"
+: "${CONTX_ENVRC:=envrc:../.contxenv:../.envrc:../.env}"
+: "${CONTX_INITRC:=initrc:../.contxrc}"
 export CONTX_CONFIG
 export CONTX_PATH
 export CONTX_ENVRC
 export CONTX_INITRC
-
-error () {
-  echo "$(basename "$0"): $*" >&2
-  exit 1
-}
-
-has_contx_files () {
-  local directory file
-  [ -n "$1" ] || return 1
-  directory="$1"
-
-  IFS=:
-  for file in $CONTX_ENVRC:$CONTX_INITRC; do
-    [ ! -f "$directory/$file" ] || return 0
-  done
-  unset IFS
-
-  return 1
-}
 
 # Source contx config file
 IFS=:
