@@ -27,7 +27,7 @@ unset IFS
 
 # Set the first argument as the context to run.
 # Search it between named context first, then as a relative directory.
-[ -n "$1" ] || erorr 'usage: contx (CONTEXT_NAME | CONTEXT_PATH) [ARGS...]'
+[ -n "$1" ] || error 'usage: contx (CONTEXT_NAME | CONTEXT_PATH) [ARGS...]'
 context="$1"
 shift
 
