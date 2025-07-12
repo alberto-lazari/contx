@@ -14,6 +14,10 @@ export CONTX_PATH
 export CONTX_ENVRC
 export CONTX_INITRC
 
+export CONTX
+export CONTX_CONTEXT_DIR
+export CONTX_ARGS
+
 # Source contx config file
 IFS=:
 for rcfile in $CONTX_CONFIG; do
@@ -41,20 +45,17 @@ unset IFS
 [ -n "$CONTX_CONTEXT_DIR" ] ||
 if [ -d "$context" ]; then
   CONTX_CONTEXT_DIR="$(realpath "$context")/.contx"
-  cd "$context"
+  CONTX_DIR="$context"
 else
   # No context was found, either as a named context or a directory
   error "context '$context' is not defined"
 fi
-
-export CONTX_CONTEXT_DIR
 
 has_contx_files "$CONTX_CONTEXT_DIR" ||
   error "no context found in '${CONTX_CONTEXT_DIR/$HOME/~}'"
 
 # Expose context name
 : ${CONTX:=$(basename "$(realpath "$CONTX_CONTEXT_DIR/..")")}
-export CONTX
 
 # Source env file before context session start to allow setting sensible envs
 IFS=:
@@ -64,14 +65,15 @@ done
 unset IFS
 
 # Move to context directory, if specified in env file
-[ ! -d "$CONTX_DIR" ] || cd "$CONTX_DIR"
+[ -d "${CONTX_DIR-/}" ] || error "directory '$CONTX_DIR' does not exist"
+cd "$CONTX_DIR"
 
 shell_type="$(basename "$(realpath "$SHELL")")"
 initrc="$SCRIPT_DIR/shell/$shell_type.initrc"
 
 # Export additional arguments to the context
 IFS=:
-export CONTX_ARGS="$@"
+CONTX_ARGS="$@"
 unset IFS
 
 # Start context based on shell type
