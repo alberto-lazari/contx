@@ -21,33 +21,32 @@ for rcfile in $CONTX_CONFIG; do
 done
 unset IFS
 
-# Set the argument as the context to run.
-# Search it between named context first, then as a relative directory
-if [ -n "$1" ]; then
-  context="$1"
-  IFS=:
-  for path in $CONTX_PATH; do
-    if [ -d "$path/$context" ] && has_contx_files "$path/$context"; then
-      CONTX_CONTEXT_DIR="$path/$context"
-      CONTX="$context"
-      break
-    fi
-  done
-  unset IFS
+# Set the first argument as the context to run.
+# Search it between named context first, then as a relative directory.
+[ -n "$1" ] || erorr 'usage: contx (CONTEXT_NAME | CONTEXT_PATH) [ARGS...]'
+context="$1"
+shift
 
-  # If no named context was found, try interpreting the argument as a directory
-  [ -n "$CONTX_CONTEXT_DIR" ] ||
-  if [ -d "$context" ]; then
-    CONTX_CONTEXT_DIR="$(realpath "$context")/.contx"
-    cd "$context"
-  else
-    # No context was found, either as a named context or a directory
-    error "context '$context' is not defined"
+IFS=:
+for path in $CONTX_PATH; do
+  if [ -d "$path/$context" ] && has_contx_files "$path/$context"; then
+    CONTX_CONTEXT_DIR="$path/$context"
+    CONTX="$context"
+    break
   fi
+done
+unset IFS
+
+# If no named context was found, try interpreting the argument as a directory
+[ -n "$CONTX_CONTEXT_DIR" ] ||
+if [ -d "$context" ]; then
+  CONTX_CONTEXT_DIR="$(realpath "$context")/.contx"
+  cd "$context"
+else
+  # No context was found, either as a named context or a directory
+  error "context '$context' is not defined"
 fi
 
-# If no argument was passed search a context in the current directory
-: "${CONTX_CONTEXT_DIR:=$(realpath "$PWD")/.contx}"
 export CONTX_CONTEXT_DIR
 
 has_contx_files "$CONTX_CONTEXT_DIR" ||
@@ -62,12 +61,18 @@ IFS=:
 for file in $CONTX_ENVRC; do
   [ ! -f "$CONTX_CONTEXT_DIR/$file" ] || . "$CONTX_CONTEXT_DIR/$file"
 done
+unset IFS
 
 # Move to context directory, if specified in env file
 [ ! -d "$CONTX_DIR" ] || cd "$CONTX_DIR"
 
 shell_type="$(basename "$(realpath "$SHELL")")"
 initrc="$SCRIPT_DIR/shell/$shell_type.initrc"
+
+# Export additional arguments to the context
+IFS=:
+export CONTX_ARGS="$@"
+unset IFS
 
 # Start context based on shell type
 case "$shell_type" in

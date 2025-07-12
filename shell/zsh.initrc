@@ -8,6 +8,9 @@ ZDOTDIR="$HOME"
 [[ ! -f "$ZDOTDIR/.zprofile" ]] || . "$ZDOTDIR/.zprofile"
 [[ ! -f "$ZDOTDIR/.zshrc" ]] || . "$ZDOTDIR/.zshrc"
 
+# Export args to context
+set -- "${(s.:.)CONTX_ARGS}"
+
 # Source context init files after normal shell initialization
 for file in ${(s.:.)CONTX_INITRC}; do
   [[ ! -f "$CONTX_CONTEXT_DIR/$file" ]] || . "$CONTX_CONTEXT_DIR/$file"

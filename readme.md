@@ -41,10 +41,10 @@ With this mechanism you can easily enter and exit environments without leaving s
 
 ### Unnamed/Named Contexts
 By creating them in a `.contx/` directory they define an unnamed context,
-that can be run by specifying the directory: `contx /path/to/dir`, or just `contx` which runs the context defined in the current directory.
+that can be run by specifying the directory: `contx /path/to/dir`
 
-You can also defined named contexts, that can be started anywhere, like with `contx MyProj`.
-You can use it to define contexts which are not tied to a specific directory,
+You can also define named contexts, that can be invoked anywhere, like with `contx MyProj`.
+You can use it to define contexts which are not necessarily tied to a specific directory,
 but just provides functions or common environments.
 I personally use them to define contexts that I want to version in a repository,
 so that I don't include `.contx/` dirs in projects I share with others.

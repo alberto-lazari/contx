@@ -4,10 +4,17 @@
 [[ ! -f ~/.bash_profile ]] || . ~/.bash_profile
 [[ ! -f ~/.bashrc ]] || . ~/.bashrc
 
-# Source context init files after normal shell initialization
+# Export args to context
 IFS=:
+set -- $CONTX_ARGS
+
+# Source context init files after normal shell initialization
 for file in $CONTX_INITRC; do
+  # Leave the deafult IFS for internal scripts
+  unset IFS
   [[ ! -f "$CONTX_CONTEXT_DIR/$file" ]] || . "$CONTX_CONTEXT_DIR/$file"
+  IFS=:
 done
 unset file
+
 unset IFS
