@@ -1,6 +1,6 @@
 error () {
   echo "$(basename "$0"): $*" >&2
-  exit 1
+  return 1
 }
 
 has_contx_files () {
